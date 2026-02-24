@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Steel Management - Quản lý tài khoản</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/api/css/style.css" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2>STEEL <span>Owner</span></h2>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">THỐNG KÊ</div>
+            <a class="menu-item" href="/">
+                <i class="fas fa-chart-pie"></i>
+                Dashboard
+            </a>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">QUẢN LÝ</div>
+
+            <!-- Staff Management -->
+            <a href="/api/user-management" class="menu-item active">
+                <i class="fas fa-users"></i>
+                Staff Management
+            </a>
+
+            <!-- Promotion Management -->
+            <a href="/api/promotion-management" class="menu-item">
+                <i class="fas fa-tags"></i>
+                Promotion Management
+            </a>
+
+            <!-- Contract Management -->
+            <a href="/api/contract-management" class="menu-item">
+                <i class="fas fa-file-contract"></i>
+                Contract Management
+            </a>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">TÀI KHOẢN</div>
+            <a class="menu-item" href="/profile">
+                <i class="fas fa-user-circle"></i>
+                Thông tin cá nhân
+            </a>
+            <a class="menu-item" href="/logout">
+                <i class="fas fa-sign-out-alt"></i>
+                Đăng xuất
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header">
+            <h1>Quản lý nhân viên <span>Staff Management</span></h1>
+            <div class="user-info">
+                <div class="user-avatar">AD</div>
+                <div class="user-details">
+                    <div class="user-name">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Tổng người dùng</h3>
+                    <div class="stat-number" id="totalUsers">0</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Admin</h3>
+                    <div class="stat-number" id="totalAdmins">0</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Nhân viên</h3>
+                    <div class="stat-number" id="totalStaff">0</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Khách hàng</h3>
+                    <div class="stat-number" id="totalCustomers">0</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Container -->
+        <div class="user-management">
+            <!-- Search and Filter Section -->
+            <div class="search-filter-section">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input
+                            id="searchInput"
+                            placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
+                            type="text"
+                    />
+                </div>
+
+                <div class="filter-buttons">
+                    <div class="filter-btn" onclick="filterByRole('all')">
+                        <i class="fas fa-filter"></i>
+                        Tất cả vai trò
+                    </div>
+                    <div class="filter-btn" onclick="filterByStatus('all')">
+                        <i class="fas fa-circle"></i>
+                        Tất cả trạng thái
+                    </div>
+                    <button class="btn-primary" onclick="showAddUserModal()">
+                        <i class="fas fa-plus"></i>
+                        Thêm người dùng
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Đang tải dữ liệu...</p>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-container">
+                <table class="user-table" id="userTable">
+                    <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Họ và tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                    <tr>
+                        <td class="no-data" colspan="8">
+                            <i class="fas fa-database"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <div class="pagination-info" id="paginationInfo">
+                    Hiển thị 1-10 của 0 người dùng
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    <button class="page-btn" disabled onclick="changePage('prev')">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn" disabled onclick="changePage('next')">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal" id="userModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Thêm người dùng mới</h2>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="userForm">
+                <input id="userId" type="hidden">
+
+                <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input id="fullName" placeholder="Nhập họ và tên" required type="text">
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input id="email" placeholder="Nhập email" required type="email">
+                </div>
+
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input id="phone" placeholder="Nhập số điện thoại" required type="text">
+                </div>
+
+                <div class="form-group">
+                    <label>Tên đăng nhập</label>
+                    <input id="username" placeholder="Nhập tên đăng nhập" required type="text">
+                </div>
+
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input id="password" placeholder="Nhập mật khẩu" type="password">
+                    <small id="passwordHelp" style="color: #6c757d; display: none;">(Để trống nếu không đổi)</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Vai trò</label>
+                    <select id="userRole" required>
+                        <option value="Admin">Admin (Quản trị viên)</option>
+                        <option value="Staff">Staff (Nhân viên)</option>
+                        <option value="Warehouse">Warehouse (Thủ kho)</option>
+                        <option value="Customer">Customer (Khách hàng)</option>
+                        <option value="Owner">Owner (Chủ doanh nghiệp)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Địa chỉ</label>
+                    <textarea id="address" placeholder="Nhập địa chỉ" rows="3"></textarea>
+                </div>
+
+                <div class="form-group checkbox">
+                    <input checked id="isActive" type="checkbox">
+                    <label for="isActive">Kích hoạt tài khoản</label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">Hủy</button>
+            <button class="btn-save" onclick="saveUser()">
+                <i class="fas fa-save"></i>
+                Lưu
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal" style="display: none;">
+    <div class="modal-content" style="width: 400px;">
+        <div class="modal-header">
+            <h2>Xác nhận xóa</h2>
+            <span class="close" onclick="closeDeleteModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Bạn có chắc muốn xóa người dùng <strong><span id="deleteUserName"></span></strong>?</p>
+            <p style="color: #dc3545; font-size: 13px; margin-top: 10px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                Hành động này không thể hoàn tác!
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button class="btn-save" onclick="confirmDelete()" style="background: #dc3545;">
+                <i class="fas fa-trash"></i>
+                Xóa
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/api/js/user-management.js"></script>
+</body>
+</html>

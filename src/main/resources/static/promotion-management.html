@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Steel Management - Quản lý khuyến mãi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/api/css/promotion-style.css" rel="stylesheet">
+    <link href="/api/css/style.css" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2>STEEL <span>Owner</span></h2>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">THỐNG KÊ</div>
+            <a class="menu-item" href="/">
+                <i class="fas fa-chart-pie"></i>
+                Dashboard
+            </a>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">QUẢN LÝ</div>
+
+            <!-- Staff Management -->
+            <a href="/api/user-management" class="menu-item ">
+                <i class="fas fa-users"></i>
+                Staff Management
+            </a>
+
+            <!-- Promotion Management -->
+            <a href="/api/promotion-management" class="menu-item active">
+                <i class="fas fa-tags"></i>
+                Promotion Management
+            </a>
+
+            <!-- Contract Management -->
+            <a href="/api/contract-management" class="menu-item">
+                <i class="fas fa-file-contract"></i>
+                Contract Management
+            </a>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">TÀI KHOẢN</div>
+            <a class="menu-item" href="/profile">
+                <i class="fas fa-user-circle"></i>
+                Thông tin cá nhân
+            </a>
+            <a class="menu-item" href="/logout">
+                <i class="fas fa-sign-out-alt"></i>
+                Đăng xuất
+            </a>
+        </div>
+    </div><div class="sidebar">
+    <div class="logo">
+        <h2>STEEL <span>Owner</span></h2>
+    </div>
+
+    <div class="menu-section">
+        <div class="menu-title">THỐNG KÊ</div>
+        <a class="menu-item" href="/">
+            <i class="fas fa-chart-pie"></i>
+            Dashboard
+        </a>
+    </div>
+
+    <div class="menu-section">
+        <div class="menu-title">QUẢN LÝ</div>
+
+        <!-- Staff Management -->
+        <a href="/api/user-management" class="menu-item active">
+            <i class="fas fa-users"></i>
+            Staff Management
+        </a>
+
+        <!-- Promotion Management -->
+        <a href="/api/promotion-management" class="menu-item">
+            <i class="fas fa-tags"></i>
+            Promotion Management
+        </a>
+
+        <!-- Contract Management -->
+        <a href="/api/contract-management" class="menu-item">
+            <i class="fas fa-file-contract"></i>
+            Contract Management
+        </a>
+    </div>
+
+    <div class="menu-section">
+        <div class="menu-title">TÀI KHOẢN</div>
+        <a class="menu-item" href="/profile">
+            <i class="fas fa-user-circle"></i>
+            Thông tin cá nhân
+        </a>
+        <a class="menu-item" href="/logout">
+            <i class="fas fa-sign-out-alt"></i>
+            Đăng xuất
+        </a>
+    </div>
+</div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header">
+            <h1>Quản lý khuyến mãi <span>Promotion Management</span></h1>
+            <div class="user-info">
+                <div class="user-avatar">AD</div>
+                <div class="user-details">
+                    <div class="user-name">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="promo-stats-cards">
+            <div class="promo-stat-card">
+                <div class="promo-stat-info">
+                    <h3>Tổng mã KM</h3>
+                    <div class="promo-stat-number" id="totalPromotions">0</div>
+                </div>
+                <div class="promo-stat-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+            </div>
+            <div class="promo-stat-card">
+                <div class="promo-stat-info">
+                    <h3>Đang hoạt động</h3>
+                    <div class="promo-stat-number" id="activePromotions">0</div>
+                </div>
+                <div class="promo-stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="promo-stat-card">
+                <div class="promo-stat-info">
+                    <h3>Sắp hết hạn</h3>
+                    <div class="promo-stat-number" id="expiringSoon">0</div>
+                </div>
+                <div class="promo-stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="promo-stat-card">
+                <div class="promo-stat-info">
+                    <h3>Đã hết hạn</h3>
+                    <div class="promo-stat-number" id="expiredPromotions">0</div>
+                </div>
+                <div class="promo-stat-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promotion Management Container -->
+        <div class="promotion-management">
+            <!-- Search and Filter Section -->
+            <div class="promo-search-filter-section">
+                <div class="promo-search-box">
+                    <i class="fas fa-search"></i>
+                    <input
+                            id="searchInput"
+                            placeholder="Tìm kiếm theo mã hoặc mô tả..."
+                            type="text"
+                    />
+                </div>
+
+                <div class="promo-filter-buttons">
+                    <div class="promo-filter-btn" onclick="filterByStatus('all')">
+                        <i class="fas fa-list"></i>
+                        Tất cả
+                    </div>
+                    <div class="promo-filter-btn" onclick="filterByStatus('active')">
+                        <i class="fas fa-play"></i>
+                        Đang hoạt động
+                    </div>
+                    <div class="promo-filter-btn" onclick="filterByStatus('inactive')">
+                        <i class="fas fa-stop"></i>
+                        Ngưng
+                    </div>
+                    <div class="promo-filter-btn" onclick="filterByStatus('expired')">
+                        <i class="fas fa-clock"></i>
+                        Hết hạn
+                    </div>
+                    <button class="promo-btn-primary" onclick="showAddPromotionModal()">
+                        <i class="fas fa-plus"></i>
+                        Thêm khuyến mãi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Đang tải dữ liệu...</p>
+            </div>
+
+            <!-- Promotions Table -->
+            <div class="promo-table-container">
+                <table class="promo-table" id="promotionTable">
+                    <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã KM</th>
+                        <th>Mô tả</th>
+                        <th>Loại giảm</th>
+                        <th>Giá trị</th>
+                        <th>Đã dùng / Tối đa</th>
+                        <th>Thời gian</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody id="promotionTableBody">
+                    <tr>
+                        <td class="no-data" colspan="9">
+                            <i class="fas fa-database"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <div class="pagination-info" id="paginationInfo">
+                    Hiển thị 1-10 của 0 khuyến mãi
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    <button class="page-btn" disabled onclick="changePage('prev')">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn" disabled onclick="changePage('next')">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Promotion Modal -->
+<div class="modal" id="promotionModal" style="display: none;">
+    <div class="modal-content" style="width: 600px;">
+        <div class="modal-header">
+            <h2 id="modalTitle">Thêm khuyến mãi mới</h2>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="promotionForm">
+                <input id="promotionId" type="hidden">
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Mã khuyến mãi <span style="color: red;">*</span></label>
+                        <input id="code" placeholder="VD: SALE20, FLASH50" required type="text" maxlength="50">
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label>Loại giảm giá <span style="color: red;">*</span></label>
+                        <select id="discountType" required onchange="toggleDiscountType()">
+                            <option value="percentage">Phần trăm (%)</option>
+                            <option value="fixed">Số tiền cố định</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;" id="percentageField">
+                        <label>Phần trăm giảm (%) <span style="color: red;">*</span></label>
+                        <input id="discountPercentage" placeholder="VD: 20" type="number" min="1" max="100" step="0.01">
+                    </div>
+
+                    <div class="form-group" style="flex: 1; display: none;" id="fixedField">
+                        <label>Số tiền giảm (VNĐ) <span style="color: red;">*</span></label>
+                        <input id="discountValue" placeholder="VD: 200000" type="number" min="1000" step="1000">
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label>Số lần dùng tối đa</label>
+                        <input id="maxUsage" placeholder="Để trống nếu không giới hạn" type="number" min="1">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Ngày bắt đầu <span style="color: red;">*</span></label>
+                        <input id="startDate" required type="datetime-local">
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label>Ngày kết thúc <span style="color: red;">*</span></label>
+                        <input id="endDate" required type="datetime-local">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <textarea id="description" placeholder="Nhập mô tả chi tiết..." rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Trạng thái</label>
+                    <select id="status">
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Ngưng hoạt động</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">Hủy</button>
+            <button class="btn-save" onclick="savePromotion()">
+                <i class="fas fa-save"></i>
+                Lưu
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal" style="display: none;">
+    <div class="modal-content" style="width: 400px;">
+        <div class="modal-header">
+            <h2>Xác nhận xóa</h2>
+            <span class="close" onclick="closeDeleteModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Bạn có chắc muốn xóa khuyến mãi <strong><span id="deletePromoCode"></span></strong>?</p>
+            <p style="color: #dc3545; font-size: 13px; margin-top: 10px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                Hành động này không thể hoàn tác!
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button class="btn-save" onclick="confirmDelete()" style="background: #dc3545;">
+                <i class="fas fa-trash"></i>
+                Xóa
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- View Promotion Modal -->
+<div class="modal" id="viewModal" style="display: none;">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header">
+            <h2>Chi tiết khuyến mãi</h2>
+            <span class="close" onclick="closeViewModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="view-details">
+                <div class="detail-row">
+                    <div class="detail-label">Mã khuyến mãi:</div>
+                    <div class="detail-value" id="viewCode"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Mô tả:</div>
+                    <div class="detail-value" id="viewDescription"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Loại giảm giá:</div>
+                    <div class="detail-value" id="viewDiscountType"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Giá trị giảm:</div>
+                    <div class="detail-value" id="viewDiscountValue"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Số lần đã dùng:</div>
+                    <div class="detail-value" id="viewUsageCount"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Số lần tối đa:</div>
+                    <div class="detail-value" id="viewMaxUsage"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Thời gian:</div>
+                    <div class="detail-value" id="viewDateRange"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Trạng thái:</div>
+                    <div class="detail-value" id="viewStatus"></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Ngày tạo:</div>
+                    <div class="detail-value" id="viewCreatedAt"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeViewModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<script src="/api/js/promotion-management.js"></script>
+</body>
+</html>
