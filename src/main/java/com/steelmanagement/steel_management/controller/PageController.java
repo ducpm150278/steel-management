@@ -45,4 +45,9 @@ public class PageController {
     public String staffCustomers() {
         return "forward:/staff-customers.html";
     }
+
+    @GetMapping("/staff-constructions")
+    public String staffConstructions() {
+        return "forward:/staff-constructions.html";
+    }
 }

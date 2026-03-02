@@ -12,7 +12,7 @@ public class Construction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "construction_code", unique = true)
+    @Column(name = "construction_code")
     private String constructionCode;
 
     @Column(name = "customer_id")
@@ -37,21 +37,22 @@ public class Construction {
     @Column(name = "notes")
     private String notes;
 
-    @Column(name = "promotion_id")
+    // Promotion fields - khớp với tên cột trong DB
+    @Column(name = "PromotionID")
     private Integer promotionId;
 
-    @Column(name = "promotion_code")
+    @Column(name = "PromotionCode")
     private String promotionCode;
 
-    @Column(name = "promotion_discount_amount")
+    @Column(name = "PromotionDiscountAmount")
     private Double promotionDiscountAmount;
-
-    @Column(name = "created_by")  // Thêm trường này
-    private Integer createdBy;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "created_by")
+    private Integer createdBy;
 }

@@ -19,15 +19,7 @@ public class ContractDTO {
     private String promotionCode;
     private Double promotionDiscount;
     private Double finalAmount;
-    private List<ProductItemDTO> products;
+    private List<ContractItemDTO> items;  // Đổi tên cho rõ ràng
     private String notes;
     private String rejectReason;
-}
-
-@Data
-class ProductItemDTO {
-    private String name;
-    private Double quantity;
-    private String unit;
-    private Double price;
 }

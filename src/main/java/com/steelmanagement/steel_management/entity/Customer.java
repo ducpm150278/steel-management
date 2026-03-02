@@ -2,7 +2,6 @@ package com.steelmanagement.steel_management.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,7 +12,7 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "customer_code", unique = true)
+    @Column(name = "customer_code")
     private String customerCode;
 
     @Column(name = "full_name")
