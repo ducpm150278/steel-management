@@ -7,7 +7,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/api/css/style.css" rel="stylesheet">
     <style>
-        /* Staff Contract Specific Styles */
+        /* Staff Contract Specific Styles - Giữ nguyên */
         .contract-container {
             display: grid;
             grid-template-columns: 1fr 400px;
@@ -370,7 +370,6 @@
 </head>
 <body>
 <div class="app">
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">
             <h2>STEEL <span>Staff</span></h2>
@@ -386,13 +385,35 @@
 
         <div class="menu-section">
             <div class="menu-title">QUẢN LÝ</div>
-            <a href="/staff-contract" class="menu-item active">
-                <i class="fas fa-file-contract"></i>
-                Tạo hợp đồng
+
+            <a class="menu-item" href="/api/staff-customers">
+                <i class="fas fa-user-tie"></i>
+                Quản lý khách hàng
             </a>
-            <a href="/staff-constructions" class="menu-item">
+
+            <a class="menu-item" href="/api/staff-constructions">
                 <i class="fas fa-building"></i>
-                Công trình của tôi
+                Quản lý Công trình
+            </a>
+
+            <a class="menu-item active" href="/api/staff-contract">
+                <i class="fas fa-file-contract"></i>
+                Quản lý hợp đồng
+            </a>
+
+            <a class="menu-item" href="/api/staff-products">
+                <i class="fas fa-cubes"></i>
+                Quản lý sản phẩm
+            </a>
+
+            <a class="menu-item" href="/api/staff-categories">
+                <i class="fas fa-tags"></i>
+                Quản lý danh mục
+            </a>
+
+            <a class="menu-item" href="/api/staff-inventory">
+                <i class="fas fa-warehouse"></i>
+                Quản lý kho
             </a>
         </div>
 
@@ -409,7 +430,7 @@
         </div>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main Content - Giữ nguyên -->
     <div class="main-content">
         <!-- Header -->
         <div class="page-header">

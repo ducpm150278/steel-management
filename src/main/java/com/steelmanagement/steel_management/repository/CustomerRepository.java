@@ -19,6 +19,13 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     @Query("SELECT c FROM Customer c WHERE " +
             "LOWER(c.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "c.phone LIKE CONCAT('%', :keyword, '%') OR " +
-            "LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(c.customerCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Customer> searchCustomers(@Param("keyword") String keyword);
+
+    // Thêm method này để lấy mã khách hàng lớn nhất (dùng cho auto-generate code)
+    @Query("SELECT MAX(c.customerCode) FROM Customer c WHERE c.customerCode LIKE 'KH%'")
+    String findMaxCustomerCode();
+
+    List<Customer> findByIsActive(Boolean isActive);
 }

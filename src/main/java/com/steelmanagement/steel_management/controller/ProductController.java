@@ -2,7 +2,6 @@ package com.steelmanagement.steel_management.controller;
 
 import com.steelmanagement.steel_management.dto.ApiResponse;
 import com.steelmanagement.steel_management.dto.ProductDTO;
-import com.steelmanagement.steel_management.entity.Product;
 import com.steelmanagement.steel_management.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +23,23 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(products));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProductDTO>> getProductById(@PathVariable Integer id) {
+        ProductDTO product = productService.getProductById(id);
+        if (product != null) {
+            return ResponseEntity.ok(ApiResponse.success(product));
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByCategory(@PathVariable Integer categoryId) {
+        List<ProductDTO> products = productService.getProductsByCategory(categoryId);
+        return ResponseEntity.ok(ApiResponse.success(products));
+    }
+
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<ProductDTO>>> searchProducts(
-            @RequestParam(required = false) String keyword) {
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> searchProducts(@RequestParam String keyword) {
         List<ProductDTO> products = productService.searchProducts(keyword);
         return ResponseEntity.ok(ApiResponse.success(products));
     }
@@ -37,27 +50,19 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(products));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductDTO>> getProductById(@PathVariable Integer id) {
-        ProductDTO product = productService.getProductById(id);
-        if (product != null) {
-            return ResponseEntity.ok(ApiResponse.success(product));
-        }
-        return ResponseEntity.notFound().build();
-    }
-
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductDTO>> createProduct(@RequestBody Product product) {
-        ProductDTO createdProduct = productService.createProduct(product);
-        return ResponseEntity.ok(ApiResponse.success("Product created successfully", createdProduct));
+    public ResponseEntity<ApiResponse<ProductDTO>> createProduct(@RequestBody ProductDTO productDTO) {
+        ProductDTO createdProduct = productService.createProduct(productDTO);
+        return ResponseEntity.ok(ApiResponse.success("Thêm sản phẩm thành công", createdProduct));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(
-            @PathVariable Integer id, @RequestBody Product product) {
-        ProductDTO updatedProduct = productService.updateProduct(id, product);
+            @PathVariable Integer id,
+            @RequestBody ProductDTO productDTO) {
+        ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
         if (updatedProduct != null) {
-            return ResponseEntity.ok(ApiResponse.success("Product updated successfully", updatedProduct));
+            return ResponseEntity.ok(ApiResponse.success("Cập nhật sản phẩm thành công", updatedProduct));
         }
         return ResponseEntity.notFound().build();
     }
@@ -65,6 +70,6 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Integer id) {
         productService.deleteProduct(id);
-        return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", null));
+        return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm thành công", null));
     }
 }

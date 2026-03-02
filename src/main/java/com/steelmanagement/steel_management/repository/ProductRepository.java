@@ -13,6 +13,9 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     List<Product> findByCategoryId(Integer categoryId);
 
+    // 🟢 Method này trả về int - dùng để đếm sản phẩm trong category
+    int countByCategoryId(Integer categoryId);
+
     @Query("SELECT p FROM Product p WHERE " +
             "LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")

@@ -30,4 +30,19 @@ public class PageController {
     public String staffContract() {
         return "forward:/staff-contract.html";
     }
+
+    @GetMapping("/staff-products")
+    public String staffProducts() {
+        return "forward:/staff-products.html";
+    }
+
+    @GetMapping("/staff-categories")
+    public String staffCategories() {
+        return "forward:/staff-categories.html";
+    }
+
+    @GetMapping("/staff-customers")
+    public String staffCustomers() {
+        return "forward:/staff-customers.html";
+    }
 }

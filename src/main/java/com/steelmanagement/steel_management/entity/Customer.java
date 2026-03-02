@@ -13,9 +13,6 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "user_id")
-    private Integer userId;
-
     @Column(name = "customer_code", unique = true)
     private String customerCode;
 
