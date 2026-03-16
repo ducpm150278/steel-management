@@ -22,4 +22,5 @@ public class ConstructionDTO {
     private LocalDateTime updatedAt;
     private Integer createdBy;
     private String createdByName;
+    private Integer itemCount; // Đếm số lượng sản phẩm
 }

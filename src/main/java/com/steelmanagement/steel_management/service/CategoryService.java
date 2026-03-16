@@ -48,13 +48,19 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
-    // 🟢 THÊM METHOD NÀY - Tìm kiếm danh mục
     @Transactional(readOnly = true)
     public List<CategoryDTO> searchCategories(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return getAllCategories();
         }
         return categoryRepository.searchCategories(keyword).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> getActiveCategories() {
+        return categoryRepository.findByIsActiveTrue().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -69,8 +75,8 @@ public class CategoryService {
         dto.setIsActive(category.getIsActive());
         dto.setCreatedAt(category.getCreatedAt());
 
-        // Đếm số sản phẩm - dùng countByCategoryId của ProductRepository (trả về int)
-        int productCount = productRepository.countByCategoryId(category.getId());
+        // Đếm số sản phẩm - dùng countByCategoryId của ProductRepository (trả về long)
+        long productCount = productRepository.countByCategoryId(category.getId());
         dto.setProductCount(productCount);
 
         // Lấy tên danh mục cha nếu có
@@ -80,6 +86,10 @@ public class CategoryService {
             });
         }
 
+        // Đếm số danh mục con
+        int childCount = categoryRepository.countByParentId(category.getId());
+        dto.setChildCount(childCount);
+
         return dto;
     }
 
@@ -88,6 +98,12 @@ public class CategoryService {
         // Kiểm tra code không trùng
         if (categoryRepository.findByCode(dto.getCode()).isPresent()) {
             throw new RuntimeException("Mã danh mục đã tồn tại!");
+        }
+
+        // Kiểm tra parentId có tồn tại không (nếu có)
+        if (dto.getParentId() != null) {
+            categoryRepository.findById(dto.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Danh mục cha không tồn tại!"));
         }
 
         Category category = new Category();
@@ -113,6 +129,16 @@ public class CategoryService {
                         }
                     }
 
+                    // Kiểm tra parentId có tồn tại không (nếu có)
+                    if (dto.getParentId() != null) {
+                        // Không cho phép đặt parent là chính nó
+                        if (dto.getParentId().equals(id)) {
+                            throw new RuntimeException("Không thể đặt danh mục cha là chính nó!");
+                        }
+                        categoryRepository.findById(dto.getParentId())
+                                .orElseThrow(() -> new RuntimeException("Danh mục cha không tồn tại!"));
+                    }
+
                     category.setName(dto.getName());
                     category.setCode(dto.getCode());
                     category.setParentId(dto.getParentId());
@@ -127,18 +153,31 @@ public class CategoryService {
 
     @Transactional
     public void deleteCategory(Integer id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
+
         // Kiểm tra có danh mục con không
-        List<Category> children = categoryRepository.findByParentId(id);
-        if (!children.isEmpty()) {
+        int childCount = categoryRepository.countByParentId(id);
+        if (childCount > 0) {
             throw new RuntimeException("Không thể xóa danh mục có chứa danh mục con!");
         }
 
         // Kiểm tra có sản phẩm không
-        int productCount = productRepository.countByCategoryId(id);
+        long productCount = productRepository.countByCategoryId(id);
         if (productCount > 0) {
             throw new RuntimeException("Không thể xóa danh mục đang có sản phẩm!");
         }
 
         categoryRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void toggleActive(Integer id) {
+        categoryRepository.findById(id)
+                .map(category -> {
+                    category.setIsActive(!category.getIsActive());
+                    return categoryRepository.save(category);
+                })
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
     }
 }

@@ -1,24 +1,29 @@
 // API Base URL
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = '/api';
 
 // State management
-let currentStaffId = 1; // Giả sử staff đang đăng nhập có ID = 1
+let allContracts = [];
+let filteredContracts = [];
+let currentPage = 1;
+let itemsPerPage = 10;
+let currentStaffId = 2; // ID của staff hiện tại
 let currentStaffName = 'Trần Văn B';
-let currentStaffRole = 'Staff';
-
-let selectedCustomer = null;
-let cart = [];
-let availableProducts = [];
-let availablePromotions = [];
-let selectedPromotion = null;
-let myContracts = [];
+let currentContractId = null;
+let currentViewContract = null;
+let deleteContractId = null;
+let deleteContractName = '';
 
 // Load data khi trang được tải
 document.addEventListener('DOMContentLoaded', function() {
-    loadCustomers();
-    loadProducts();
-    loadPromotions();
-    loadMyContracts();
+    // Set user info
+    document.getElementById('userName').textContent = currentStaffName;
+
+    loadContracts();
+
+    // Add event listeners
+    document.getElementById('searchInput').addEventListener('input', debounce(filterContracts, 300));
+    document.getElementById('statusFilter').addEventListener('change', filterContracts);
+    document.getElementById('paymentFilter').addEventListener('change', filterContracts);
 });
 
 // =============================================
@@ -39,13 +44,12 @@ async function callApi(endpoint, method = 'GET', data = null) {
 
     try {
         console.log(`Calling API: ${API_BASE_URL}${endpoint}`);
-
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
 
         if (!response.ok) {
             const errorText = await response.text();
             console.error('API Error Response:', errorText);
-            throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+            throw new Error(`HTTP error ${response.status}`);
         }
 
         const result = await response.json();
@@ -57,856 +61,676 @@ async function callApi(endpoint, method = 'GET', data = null) {
 }
 
 // =============================================
-// CUSTOMER FUNCTIONS
+// LOAD CONTRACTS
 // =============================================
 
-async function loadCustomers() {
-    try {
-        console.log('Loading customers...');
-        const response = await callApi('/customers');
-        console.log('Customers response:', response);
+async function loadContracts() {
+    const loading = document.getElementById('loading');
+    const tableBody = document.getElementById('contractsTableBody');
+    const pagination = document.getElementById('pagination');
 
-        if (response.data && response.data.length > 0) {
-            displayCustomers(response.data);
+    loading.style.display = 'block';
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8" class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Đang tải dữ liệu...</p>
+            </td>
+        </tr>
+    `;
+
+    try {
+        console.log(`Loading contracts for staff: ${currentStaffId}`);
+        const response = await callApi(`/staff/contracts/my-contracts/${currentStaffId}`);
+        console.log('Contracts response:', response);
+
+        if (response && response.data && response.data.length > 0) {
+            allContracts = response.data;
         } else {
-            displayMockCustomers();
+            allContracts = [];
+        }
+
+        filteredContracts = [...allContracts];
+        updateStats();
+        displayContracts();
+
+        if (allContracts.length > 0) {
+            pagination.style.display = 'flex';
+        } else {
+            pagination.style.display = 'none';
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        <i class="fas fa-file-contract"></i>
+                        <p>Không có hợp đồng nào</p>
+                    </td>
+                </tr>
+            `;
         }
     } catch (error) {
-        console.error('Error loading customers, using mock data:', error);
-        displayMockCustomers();
-    }
-}
-
-function displayCustomers(customers) {
-    const customerList = document.getElementById('customerList');
-
-    customerList.innerHTML = customers.map(customer => `
-        <div class="customer-item" onclick="selectCustomer(${customer.id})">
-            <div class="customer-name">${customer.fullName || customer.full_name}</div>
-            <div class="customer-info">
-                <span><i class="fas fa-phone"></i> ${customer.phone}</span>
-                <span><i class="fas fa-envelope"></i> ${customer.email}</span>
-            </div>
-            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
-                Mã số thuế: ${customer.taxCode || 'Chưa có'}
-            </div>
-        </div>
-    `).join('');
-}
-
-function displayMockCustomers() {
-    const mockCustomers = getMockCustomers();
-    const customerList = document.getElementById('customerList');
-
-    customerList.innerHTML = mockCustomers.map(customer => `
-        <div class="customer-item" onclick="selectCustomer(${customer.id})">
-            <div class="customer-name">${customer.fullName}</div>
-            <div class="customer-info">
-                <span><i class="fas fa-phone"></i> ${customer.phone}</span>
-                <span><i class="fas fa-envelope"></i> ${customer.email}</span>
-            </div>
-            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
-                Mã số thuế: ${customer.taxCode || 'Chưa có'}
-            </div>
-        </div>
-    `).join('');
-}
-
-function getMockCustomers() {
-    return [
-        { id: 1, fullName: 'Công ty Xây dựng XYZ', phone: '0901234567', email: 'info@xyz.vn', taxCode: '0123456789' },
-        { id: 2, fullName: 'Nguyễn Văn D', phone: '0900000004', email: 'customer1@email.com', taxCode: null },
-        { id: 3, fullName: 'Công ty ABC', phone: '0909876543', email: 'contact@abc.vn', taxCode: '9876543210' },
-        { id: 4, fullName: 'Công ty TNHH Xây dựng Nam Phát', phone: '0912345678', email: 'namphat@example.com', taxCode: '0123456789' },
-        { id: 5, fullName: 'DNTN Thương mại Hoàng Gia', phone: '0923456789', email: 'hoanggia@example.com', taxCode: '0987654321' }
-    ];
-}
-
-function selectCustomer(customerId) {
-    const customers = getMockCustomers();
-    selectedCustomer = customers.find(c => c.id === customerId);
-
-    // Update UI
-    document.querySelectorAll('.customer-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-    event.currentTarget.classList.add('selected');
-
-    console.log('Selected customer:', selectedCustomer);
-}
-
-// =============================================
-// PRODUCT FUNCTIONS
-// =============================================
-
-async function loadProducts() {
-    try {
-        console.log('Loading products...');
-        const response = await callApi('/products');
-        console.log('Products response:', response);
-
-        if (response.data && response.data.length > 0) {
-            displayProducts(response.data);
-        } else {
-            displayMockProducts();
-        }
-    } catch (error) {
-        console.error('Error loading products, using mock data:', error);
-        displayMockProducts();
-    }
-}
-
-function displayProducts(products) {
-    const productGrid = document.getElementById('productGrid');
-
-    productGrid.innerHTML = products.map(product => `
-        <div class="product-card" onclick="addToCart(${product.id})">
-            <div class="product-code">${product.productCode}</div>
-            <div class="product-name">${product.name}</div>
-            <div class="product-price">${formatCurrency(product.price || 1000000)}</div>
-            <div class="product-stock">
-                <i class="fas fa-cube"></i> Còn ${product.stockQuantity || 50} ${product.unit || 'cây'}
-            </div>
-        </div>
-    `).join('');
-
-    availableProducts = products;
-}
-
-function displayMockProducts() {
-    const mockProducts = getMockProducts();
-    const productGrid = document.getElementById('productGrid');
-
-    productGrid.innerHTML = mockProducts.map(product => `
-        <div class="product-card" onclick="addToCart(${product.id})">
-            <div class="product-code">${product.productCode}</div>
-            <div class="product-name">${product.name}</div>
-            <div class="product-price">${formatCurrency(product.price)}</div>
-            <div class="product-stock">
-                <i class="fas fa-cube"></i> Còn ${product.stockQuantity} ${product.unit}
-            </div>
-        </div>
-    `).join('');
-
-    availableProducts = mockProducts;
-}
-
-function getMockProducts() {
-    return [
-        { id: 1, productCode: 'H100x100', name: 'Thép H 100x100x6x8', price: 2000000, unit: 'cây', stockQuantity: 50 },
-        { id: 2, productCode: 'BOX50x50', name: 'Thép hộp 50x50x2', price: 500000, unit: 'cây', stockQuantity: 30 },
-        { id: 3, productCode: 'I150x75', name: 'Thép I 150x75', price: 2500000, unit: 'cây', stockQuantity: 20 },
-        { id: 4, productCode: 'T10', name: 'Thép tròn D10', price: 150000, unit: 'cây', stockQuantity: 100 },
-        { id: 5, productCode: 'T12', name: 'Thép tròn D12', price: 220000, unit: 'cây', stockQuantity: 80 },
-        { id: 6, productCode: 'T14', name: 'Thép tròn D14', price: 300000, unit: 'cây', stockQuantity: 60 },
-        { id: 7, productCode: 'T16', name: 'Thép tròn D16', price: 400000, unit: 'cây', stockQuantity: 45 },
-        { id: 8, productCode: 'BOX40x40', name: 'Thép hộp 40x40x2', price: 350000, unit: 'cây', stockQuantity: 40 },
-        { id: 9, productCode: 'BOX60x60', name: 'Thép hộp 60x60x3', price: 750000, unit: 'cây', stockQuantity: 25 },
-        { id: 10, productCode: 'H150x150', name: 'Thép H 150x150x7x10', price: 3500000, unit: 'cây', stockQuantity: 15 }
-    ];
-}
-
-function addToCart(productId) {
-    const product = availableProducts.find(p => p.id === productId);
-    if (!product) return;
-
-    const existingItem = cart.find(item => item.productId === productId);
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({
-            productId: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: 1,
-            unit: product.unit
-        });
-    }
-
-    renderCart();
-    showNotification('Đã thêm sản phẩm vào giỏ hàng!', 'success');
-}
-
-// =============================================
-// CART FUNCTIONS
-// =============================================
-
-function renderCart() {
-    const cartDiv = document.getElementById('cartItems');
-
-    if (cart.length === 0) {
-        cartDiv.innerHTML = '<div style="text-align: center; padding: 30px; color: #6c757d;">Giỏ hàng trống</div>';
-        updateTotals();
-        return;
-    }
-
-    cartDiv.innerHTML = cart.map((item, index) => `
-        <div class="cart-item">
-            <div class="cart-item-info">
-                <div class="cart-item-name">${item.name}</div>
-                <div class="cart-item-price">${formatCurrency(item.price)} / ${item.unit}</div>
-            </div>
-            <div class="cart-item-quantity">
-                <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">-</button>
-                <input type="text" class="quantity-input" value="${item.quantity}" onchange="updateQuantityInput(${index}, this.value)">
-                <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">+</button>
-                <i class="fas fa-trash remove-btn" onclick="removeFromCart(${index})"></i>
-            </div>
-        </div>
-    `).join('');
-
-    updateTotals();
-}
-
-function updateQuantity(index, delta) {
-    const newQuantity = cart[index].quantity + delta;
-    if (newQuantity > 0 && newQuantity <= 100) {
-        cart[index].quantity = newQuantity;
-        renderCart();
-    }
-}
-
-function updateQuantityInput(index, value) {
-    const quantity = parseInt(value);
-    if (quantity > 0 && quantity <= 100) {
-        cart[index].quantity = quantity;
-    } else {
-        cart[index].quantity = 1;
-    }
-    renderCart();
-}
-
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    renderCart();
-    showNotification('Đã xóa sản phẩm khỏi giỏ hàng!', 'info');
-}
-
-function clearCart() {
-    if (cart.length > 0 && confirm('Bạn có chắc muốn xóa tất cả sản phẩm trong giỏ hàng?')) {
-        cart = [];
-        renderCart();
-        showNotification('Đã xóa giỏ hàng!', 'info');
-    }
-}
-
-// =============================================
-// PROMOTION FUNCTIONS
-// =============================================
-
-async function loadPromotions() {
-    try {
-        console.log('Loading promotions...');
-        const response = await callApi('/promotions/active');
-        console.log('Promotions response:', response);
-
-        if (response.data && response.data.length > 0) {
-            displayPromotions(response.data);
-        } else {
-            displayMockPromotions();
-        }
-    } catch (error) {
-        console.error('Error loading promotions, using mock data:', error);
-        displayMockPromotions();
-    }
-}
-
-function displayPromotions(promotions) {
-    availablePromotions = promotions;
-
-    const promotionSelect = document.getElementById('promotionSelect');
-    promotionSelect.innerHTML = '<option value="">Chọn khuyến mãi (nếu có)</option>' +
-        promotions.map(p => `
-            <option value="${p.promotionId || p.id}" data-type="${p.discountType}" data-value="${p.discountPercentage || p.discountValue}">
-                ${p.code} - ${p.discountType === 'percentage' ? p.discountPercentage + '%' : formatCurrency(p.discountValue)}
-            </option>
-        `).join('');
-}
-
-function displayMockPromotions() {
-    const mockPromotions = getMockPromotions();
-    availablePromotions = mockPromotions;
-
-    const promotionSelect = document.getElementById('promotionSelect');
-    promotionSelect.innerHTML = '<option value="">Chọn khuyến mãi (nếu có)</option>' +
-        mockPromotions.map(p => `
-            <option value="${p.id}" data-type="${p.discountType}" data-value="${p.discountPercentage || p.discountValue}">
-                ${p.code} - ${p.discountType === 'percentage' ? p.discountPercentage + '%' : formatCurrency(p.discountValue)}
-            </option>
-        `).join('');
-}
-
-function getMockPromotions() {
-    return [
-        { id: 1, code: 'SALE20', discountType: 'percentage', discountPercentage: 20, description: 'Giảm 20% cho đơn hàng từ 1 triệu' },
-        { id: 2, code: 'FIXED200K', discountType: 'fixed', discountValue: 200000, description: 'Giảm trực tiếp 200,000đ' },
-        { id: 3, code: 'WELCOME10', discountType: 'percentage', discountPercentage: 10, description: 'Giảm 10% cho khách hàng mới' },
-        { id: 4, code: 'FLASH50', discountType: 'percentage', discountPercentage: 50, description: 'Flash Sale 50%' }
-    ];
-}
-
-function applyPromotion() {
-    const select = document.getElementById('promotionSelect');
-    const promotionId = select.value;
-
-    if (!promotionId) {
-        selectedPromotion = null;
-        document.getElementById('promotionInfo').style.display = 'none';
-        updateTotals();
-        return;
-    }
-
-    const promotion = availablePromotions.find(p => p.id == promotionId);
-    if (promotion) {
-        selectedPromotion = promotion;
-        document.getElementById('promotionInfo').style.display = 'block';
-        document.getElementById('promotionDetail').innerHTML = `
-            <strong>${promotion.code}</strong> - 
-            ${promotion.discountType === 'percentage' ? `Giảm ${promotion.discountPercentage}%` : `Giảm ${formatCurrency(promotion.discountValue)}`}
-            <br>
-            <small>${promotion.description || ''}</small>
+        console.error('Error loading contracts:', error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Lỗi: ${error.message}</p>
+                </td>
+            </tr>
         `;
-        updateTotals();
-        showNotification('Đã áp dụng khuyến mãi!', 'success');
+    } finally {
+        loading.style.display = 'none';
     }
 }
 
 // =============================================
-// CALCULATION FUNCTIONS
+// UPDATE STATS
 // =============================================
 
-function updateTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    let discount = 0;
+function updateStats() {
+    const total = allContracts.length;
+    const pending = allContracts.filter(c => c.contractStatus === 'Pending').length;
+    const active = allContracts.filter(c => c.contractStatus === 'Active').length;
+    const totalValue = allContracts.reduce((sum, c) => sum + (c.totalAmount || 0), 0);
 
-    if (selectedPromotion) {
-        if (selectedPromotion.discountType === 'percentage') {
-            discount = subtotal * (selectedPromotion.discountPercentage / 100);
-            // Giới hạn discount tối đa
-            if (discount > subtotal * 0.5) discount = subtotal * 0.5;
-        } else {
-            discount = selectedPromotion.discountValue;
-            // Không giảm quá tổng tiền
-            if (discount > subtotal) discount = subtotal;
+    document.getElementById('totalContracts').textContent = total;
+    document.getElementById('pendingContracts').textContent = pending;
+    document.getElementById('activeContracts').textContent = active;
+    document.getElementById('totalValue').textContent = formatCurrency(totalValue);
+}
+
+// =============================================
+// DISPLAY CONTRACTS (TABLE FORMAT)
+// =============================================
+
+function displayContracts() {
+    const tableBody = document.getElementById('contractsTableBody');
+    const pagination = document.getElementById('pagination');
+
+    if (filteredContracts.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty-state">
+                    <i class="fas fa-file-contract"></i>
+                    <p>Không có hợp đồng nào</p>
+                </td>
+            </tr>
+        `;
+        pagination.style.display = 'none';
+        return;
+    }
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = Math.min(start + itemsPerPage, filteredContracts.length);
+    const paginatedContracts = filteredContracts.slice(start, end);
+
+    let html = '';
+    paginatedContracts.forEach(contract => {
+        const statusClass = getStatusClass(contract.contractStatus);
+        const statusText = getStatusText(contract.contractStatus);
+        const paymentClass = getPaymentClass(contract.paymentStatus);
+        const paymentText = getPaymentText(contract.paymentStatus);
+        const canSubmit = contract.contractStatus === 'Draft';
+        const canEdit = contract.contractStatus === 'Draft' || contract.contractStatus === 'Pending';
+
+        html += `
+            <tr onclick="viewContract(${contract.id})">
+                <td><strong>${contract.contractNumber || 'HĐ-' + contract.id}</strong></td>
+                <td>${contract.constructionName || 'Chưa có công trình'}</td>
+                <td>${contract.customerName || 'Chưa có khách hàng'}</td>
+                <td>${formatDate(contract.contractDate)}</td>
+                <td class="amount">${formatCurrency(contract.totalAmount || 0)}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td><span class="status-badge ${paymentClass}">${paymentText}</span></td>
+                <td onclick="event.stopPropagation()">
+                    <div class="action-buttons">
+                        <button class="btn-icon btn-view" onclick="viewContract(${contract.id})" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${canEdit ? `
+                            <button class="btn-icon btn-edit" onclick="editContract(${contract.id})" title="Chỉnh sửa">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        ` : ''}
+                        ${canSubmit ? `
+                            <button class="btn-icon btn-submit" onclick="submitContract(${contract.id})" title="Gửi duyệt">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        ` : ''}
+                        ${contract.contractStatus === 'Draft' ? `
+                            <button class="btn-icon btn-delete" onclick="showDeleteModal(${contract.id}, '${contract.contractNumber}')" title="Xóa">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+    updatePaginationInfo(start + 1, end, filteredContracts.length);
+    renderPaginationButtons();
+}
+
+// =============================================
+// FILTER FUNCTIONS
+// =============================================
+
+function filterContracts() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const paymentFilter = document.getElementById('paymentFilter').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+    filteredContracts = allContracts.filter(contract => {
+        // Status filter
+        if (statusFilter !== 'all' && contract.contractStatus !== statusFilter) {
+            return false;
         }
-    }
 
-    const total = subtotal - discount;
-
-    document.getElementById('subtotal').textContent = formatCurrency(subtotal);
-
-    if (discount > 0) {
-        document.getElementById('discountRow').style.display = 'flex';
-        document.getElementById('discount').textContent = `-${formatCurrency(discount)}`;
-    } else {
-        document.getElementById('discountRow').style.display = 'none';
-    }
-
-    document.getElementById('total').textContent = formatCurrency(total);
-}
-
-// =============================================
-// CONTRACT FUNCTIONS
-// =============================================
-
-function validateForm() {
-    if (!selectedCustomer) {
-        showNotification('Vui lòng chọn khách hàng!', 'error');
-        return false;
-    }
-
-    if (!document.getElementById('constructionName').value.trim()) {
-        showNotification('Vui lòng nhập tên công trình!', 'error');
-        return false;
-    }
-
-    if (cart.length === 0) {
-        showNotification('Vui lòng thêm sản phẩm vào giỏ hàng!', 'error');
-        return false;
-    }
-
-    return true;
-}
-
-function getContractData() {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    let discount = 0;
-
-    if (selectedPromotion) {
-        if (selectedPromotion.discountType === 'percentage') {
-            discount = subtotal * (selectedPromotion.discountPercentage / 100);
-        } else {
-            discount = selectedPromotion.discountValue;
+        // Payment filter
+        if (paymentFilter !== 'all' && contract.paymentStatus !== paymentFilter) {
+            return false;
         }
-    }
 
-    return {
-        customerId: selectedCustomer.id,
-        constructionName: document.getElementById('constructionName').value.trim(),
-        description: document.getElementById('constructionDesc').value.trim(),
-        notes: document.getElementById('contractNotes').value.trim(),
-        items: cart.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price
-        })),
-        promotionId: selectedPromotion?.id,
-        promotionCode: selectedPromotion?.code,
-        subtotal: subtotal,
-        discount: discount,
-        total: subtotal - discount,
-        createdBy: currentStaffId,
-        createdAt: new Date().toISOString()
+        // Search filter
+        if (searchTerm) {
+            const contractNumber = (contract.contractNumber || '').toLowerCase();
+            const customerName = (contract.customerName || '').toLowerCase();
+            const constructionName = (contract.constructionName || '').toLowerCase();
+
+            if (!contractNumber.includes(searchTerm) &&
+                !customerName.includes(searchTerm) &&
+                !constructionName.includes(searchTerm)) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    currentPage = 1;
+    displayContracts();
+}
+
+// =============================================
+// VIEW CONTRACT DETAILS
+// =============================================
+
+async function viewContract(id) {
+    try {
+        console.log(`Loading contract details for ID: ${id}`);
+
+        const response = await callApi(`/staff/contracts/detail/${id}`);
+        const contract = response.data;
+
+        if (!contract) {
+            alert('Không tìm thấy hợp đồng!');
+            return;
+        }
+
+        currentViewContract = contract;
+
+        const modalBody = document.getElementById('viewContractBody');
+        const editBtn = document.getElementById('editFromViewBtn');
+        const submitBtn = document.getElementById('submitFromViewBtn');
+
+        // Show buttons based on status
+        if (contract.contractStatus === 'Draft' || contract.contractStatus === 'Pending') {
+            editBtn.style.display = 'inline-block';
+        } else {
+            editBtn.style.display = 'none';
+        }
+
+        if (contract.contractStatus === 'Draft') {
+            submitBtn.style.display = 'inline-block';
+        } else {
+            submitBtn.style.display = 'none';
+        }
+
+        // Calculate totals
+        const subtotal = contract.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) || 0;
+        const discount = contract.promotionDiscountAmount || 0;
+        const vat = (subtotal - discount) * 0.1;
+        const finalAmount = subtotal - discount + vat;
+
+        // Create products table HTML
+        let productsHtml = '';
+        if (contract.items && contract.items.length > 0) {
+            productsHtml = contract.items.map(item => {
+                // 🟢 Lấy đơn giá - ưu tiên unitPrice, nếu không có thì dùng price
+                const price = item.unitPrice || item.price || 0;
+                const itemTotal = item.totalPrice || (item.quantity * price);
+
+                return `
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #e9ecef;">${item.productName || 'Sản phẩm #' + item.productId}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: center;">${item.quantity}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: center;">${item.unit || 'cây'}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(price)}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(itemTotal)}</td>
+            </tr>
+        `;
+            }).join('');
+        }
+
+        modalBody.innerHTML = `
+            <div class="detail-view">
+                <div class="detail-section">
+                    <h3>Thông tin chung</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Số hợp đồng</span>
+                            <span class="value">${contract.contractNumber || 'Chưa có'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Ngày hợp đồng</span>
+                            <span class="value">${formatDate(contract.contractDate)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Ngày giao hàng</span>
+                            <span class="value">${formatDate(contract.deliveryDate)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Trạng thái</span>
+                            <span class="value">
+                                <span class="status-badge ${getStatusClass(contract.contractStatus)}">
+                                    ${getStatusText(contract.contractStatus)}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Thông tin khách hàng</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Tên khách hàng</span>
+                            <span class="value">${contract.customerName || 'Đang cập nhật'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Số điện thoại</span>
+                            <span class="value">${contract.customerPhone || 'Đang cập nhật'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Thông tin công trình</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Tên công trình</span>
+                            <span class="value">${contract.constructionName || 'Đang cập nhật'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Chi tiết sản phẩm</h3>
+                    ${productsHtml ? `
+                        <table class="products-table">
+                            <thead>
+                                <tr style="background: #ffd700;">
+                                    <th style="padding: 10px; text-align: left;">Sản phẩm</th>
+                                    <th style="padding: 10px; text-align: center;">Số lượng</th>
+                                    <th style="padding: 10px; text-align: center;">Đơn vị</th>
+                                    <th style="padding: 10px; text-align: right;">Đơn giá</th>
+                                    <th style="padding: 10px; text-align: right;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${productsHtml}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" style="padding: 10px; text-align: right;"><strong>Tạm tính:</strong></td>
+                                    <td style="padding: 10px; text-align: right;">${formatCurrency(subtotal)}</td>
+                                </tr>
+                                ${contract.promotionCode ? `
+                                    <tr>
+                                        <td colspan="4" style="padding: 10px; text-align: right;">
+                                            <strong>Khuyến mãi (${contract.promotionCode}):</strong>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right; color: #dc3545;">-${formatCurrency(discount)}</td>
+                                    </tr>
+                                ` : ''}
+                                <tr>
+                                    <td colspan="4" style="padding: 10px; text-align: right;"><strong>VAT (10%):</strong></td>
+                                    <td style="padding: 10px; text-align: right;">${formatCurrency(vat)}</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td colspan="4" style="padding: 10px; text-align: right;"><strong>Tổng cộng:</strong></td>
+                                    <td style="padding: 10px; text-align: right;"><strong style="color: #ffd700;">${formatCurrency(finalAmount)}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    ` : '<p style="padding: 20px; text-align: center; color: #6c757d;">Không có sản phẩm nào</p>'}
+                </div>
+
+                ${contract.notes ? `
+                    <div class="detail-section">
+                        <h3>Ghi chú</h3>
+                        <p style="background: #f8f9fa; padding: 10px; border-radius: 6px;">${contract.notes}</p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        document.getElementById('viewContractModal').style.display = 'block';
+    } catch (error) {
+        console.error('Error loading contract details:', error);
+        alert('Lỗi khi tải chi tiết hợp đồng: ' + error.message);
+    }
+}
+
+// =============================================
+// EDIT CONTRACT
+// =============================================
+
+async function editContract(id) {
+    try {
+        console.log(`Loading contract for edit: ${id}`);
+
+        const response = await callApi(`/staff/contracts/detail/${id}`);
+        const contract = response.data;
+
+        if (!contract) {
+            alert('Không tìm thấy hợp đồng!');
+            return;
+        }
+
+        document.getElementById('editContractId').value = contract.id;
+        document.getElementById('editContractNumber').value = contract.contractNumber || '';
+        document.getElementById('editContractDate').value = contract.contractDate || '';
+        document.getElementById('editDeliveryDate').value = contract.deliveryDate || '';
+        document.getElementById('editContractStatus').value = contract.contractStatus || 'Draft';
+        document.getElementById('editPaymentMethod').value = contract.paymentMethod || 'bank_transfer';
+        document.getElementById('editPaymentStatus').value = contract.paymentStatus || 'Unpaid';
+        document.getElementById('editDepositAmount').value = contract.depositAmount || 0;
+        document.getElementById('editNotes').value = contract.notes || '';
+
+        document.getElementById('editContractModal').style.display = 'block';
+    } catch (error) {
+        console.error('Error loading contract for edit:', error);
+        alert('Lỗi khi tải thông tin hợp đồng: ' + error.message);
+    }
+}
+
+// =============================================
+// SAVE CONTRACT CHANGES
+// =============================================
+
+async function saveContractChanges() {
+    const contractId = document.getElementById('editContractId').value;
+
+    const contractData = {
+        contractDate: document.getElementById('editContractDate').value,
+        deliveryDate: document.getElementById('editDeliveryDate').value,
+        contractStatus: document.getElementById('editContractStatus').value,
+        paymentMethod: document.getElementById('editPaymentMethod').value,
+        paymentStatus: document.getElementById('editPaymentStatus').value,
+        depositAmount: parseFloat(document.getElementById('editDepositAmount').value) || 0,
+        notes: document.getElementById('editNotes').value
     };
-}
-
-async function saveDraft() {
-    if (!validateForm()) return;
-
-    const contractData = getContractData();
-    contractData.status = 'Draft';
 
     try {
-        // Thử gọi API nếu có
-        // const response = await callApi('/staff/contracts/draft', 'POST', contractData);
+        const result = await callApi(`/staff/contracts/${contractId}`, 'PUT', contractData);
 
-        // Nếu API chưa có, lưu vào mock data
-        const mockContract = {
-            id: myContracts.length + 1,
-            contractNumber: `HD-${new Date().getFullYear()}-${String(myContracts.length + 1).padStart(3, '0')}`,
-            constructionName: contractData.constructionName,
-            customerName: selectedCustomer.fullName,
-            createdDate: new Date().toISOString(),
-            status: 'Draft',
-            finalAmount: contractData.total
-        };
-
-        myContracts.unshift(mockContract);
-        displayMyContracts(myContracts);
-
-        showNotification('Đã lưu hợp đồng nháp!', 'success');
-        resetForm();
+        if (result) {
+            alert('Cập nhật hợp đồng thành công!');
+            closeEditModal();
+            loadContracts();
+        }
     } catch (error) {
-        console.error('Error saving draft:', error);
-        showNotification('Lỗi: ' + error.message, 'error');
+        alert('Lỗi: ' + error.message);
+    }
+}
+
+// =============================================
+// SUBMIT CONTRACT
+// =============================================
+async function checkConstructionContract() {
+    try {
+        const response = await callApi(`/contracts/check-construction/${selectedConstruction.id}`);
+        return response.data.exists;
+    } catch (error) {
+        console.error('Error checking construction:', error);
+        return false;
     }
 }
 
 async function submitContract() {
     if (!validateForm()) return;
 
-    const contractData = getContractData();
-    contractData.status = 'Pending';
-    contractData.submittedAt = new Date().toISOString();
-
-    if (confirm('Bạn có chắc muốn gửi hợp đồng này để duyệt?')) {
-        try {
-            // Thử gọi API nếu có
-            // const response = await callApi('/staff/contracts/submit', 'POST', contractData);
-
-            // Nếu API chưa có, lưu vào mock data
-            const mockContract = {
-                id: myContracts.length + 1,
-                contractNumber: `HD-${new Date().getFullYear()}-${String(myContracts.length + 1).padStart(3, '0')}`,
-                constructionName: contractData.constructionName,
-                customerName: selectedCustomer.fullName,
-                createdDate: new Date().toISOString(),
-                status: 'Pending',
-                finalAmount: contractData.total
-            };
-
-            myContracts.unshift(mockContract);
-            displayMyContracts(myContracts);
-
-            showNotification('Đã gửi hợp đồng thành công!', 'success');
-            resetForm();
-        } catch (error) {
-            console.error('Error submitting contract:', error);
-            showNotification('Lỗi: ' + error.message, 'error');
-        }
-    }
-}
-
-function resetForm() {
-    selectedCustomer = null;
-    cart = [];
-    selectedPromotion = null;
-    document.getElementById('constructionName').value = '';
-    document.getElementById('constructionDesc').value = '';
-    document.getElementById('contractNotes').value = '';
-    document.getElementById('promotionSelect').value = '';
-    document.getElementById('promotionInfo').style.display = 'none';
-
-    // Remove selected class from customer items
-    document.querySelectorAll('.customer-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-
-    renderCart();
-    showNotification('Đã làm mới form!', 'info');
-}
-
-// =============================================
-// MY CONTRACTS FUNCTIONS
-// =============================================
-
-async function loadMyContracts() {
-    try {
-        console.log('Loading my contracts...');
-        const response = await callApi(`/staff/contracts/my-contracts/${currentStaffId}`);
-        console.log('My contracts response:', response);
-
-        if (response.data && response.data.length > 0) {
-            displayMyContracts(response.data);
-        } else {
-            displayMockMyContracts();
-        }
-    } catch (error) {
-        console.error('Error loading my contracts, using mock data:', error);
-        displayMockMyContracts();
-    }
-}
-
-function displayMyContracts(contracts) {
-    myContracts = contracts;
-
-    const myContractsDiv = document.getElementById('myContracts');
-
-    if (contracts.length === 0) {
-        myContractsDiv.innerHTML = '<div style="text-align: center; padding: 30px; color: #6c757d;">Chưa có hợp đồng nào</div>';
+    // Kiểm tra xem công trình đã có hợp đồng chưa
+    const exists = await checkConstructionContract();
+    if (exists) {
+        alert('Công trình này đã có hợp đồng! Không thể tạo thêm.');
         return;
     }
 
-    myContractsDiv.innerHTML = contracts.map(contract => `
-        <div class="contract-item">
-            <div class="contract-info">
-                <h4>${contract.contractNumber || 'HD-' + contract.id} - ${contract.constructionName}</h4>
-                <div class="contract-meta">
-                    <span><i class="fas fa-user"></i> ${contract.customerName || 'Khách hàng ' + contract.customerId}</span>
-                    <span><i class="fas fa-calendar"></i> ${formatDate(contract.createdDate || contract.createdAt)}</span>
-                    <span><i class="fas fa-tag"></i> ${formatCurrency(contract.finalAmount || contract.total || 0)}</span>
-                </div>
-            </div>
-            <div>
-                <span class="status-badge status-${(contract.status || contract.constructionStatus || 'draft').toLowerCase()}">
-                    ${getStatusText(contract.status || contract.constructionStatus)}
-                </span>
-                <button class="btn-icon btn-view" onclick="viewMyContract(${contract.id})" style="margin-left: 10px;">
-                    <i class="fas fa-eye"></i>
-                </button>
-                ${(contract.status === 'Draft' || contract.constructionStatus === 'Draft') ? `
-                    <button class="btn-icon btn-edit" onclick="editMyContract(${contract.id})" style="margin-left: 5px;">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon btn-delete" onclick="deleteMyContract(${contract.id})" style="margin-left: 5px;">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
+    if (!confirm('Bạn có chắc muốn gửi hợp đồng này để duyệt?')) return;
+
+    const contractData = collectFormData();
+    contractData.contractStatus = 'Pending';
+
+    try {
+        const response = await callApi('/contracts', 'POST', contractData);
+        alert('Gửi duyệt hợp đồng thành công!');
+        window.location.href = '/staff-contract';
+    } catch (error) {
+        alert('Lỗi: ' + error.message);
+    }
 }
 
-function displayMockMyContracts() {
-    const mockContracts = getMockMyContracts();
-    myContracts = mockContracts;
+async function saveDraft() {
+    if (!validateForm()) return;
 
-    const myContractsDiv = document.getElementById('myContracts');
-
-    myContractsDiv.innerHTML = mockContracts.map(contract => `
-        <div class="contract-item">
-            <div class="contract-info">
-                <h4>${contract.contractNumber} - ${contract.constructionName}</h4>
-                <div class="contract-meta">
-                    <span><i class="fas fa-user"></i> ${contract.customerName}</span>
-                    <span><i class="fas fa-calendar"></i> ${formatDate(contract.createdDate)}</span>
-                    <span><i class="fas fa-tag"></i> ${formatCurrency(contract.finalAmount)}</span>
-                </div>
-            </div>
-            <div>
-                <span class="status-badge status-${contract.status.toLowerCase()}">${getStatusText(contract.status)}</span>
-                <button class="btn-icon btn-view" onclick="viewMyContract(${contract.id})" style="margin-left: 10px;">
-                    <i class="fas fa-eye"></i>
-                </button>
-                ${contract.status === 'Draft' ? `
-                    <button class="btn-icon btn-edit" onclick="editMyContract(${contract.id})" style="margin-left: 5px;">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon btn-delete" onclick="deleteMyContract(${contract.id})" style="margin-left: 5px;">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
-}
-
-function getMockMyContracts() {
-    return [
-        {
-            id: 1,
-            contractNumber: 'HD-2025-001',
-            constructionName: 'Công trình Nhà A',
-            customerName: 'Công ty XYZ',
-            createdDate: '2025-02-20T10:30:00',
-            status: 'Pending',
-            finalAmount: 120000000,
-            items: [
-                { name: 'Thép H 100x100', quantity: 50, price: 2000000 },
-                { name: 'Thép hộp 50x50', quantity: 100, price: 500000 }
-            ]
-        },
-        {
-            id: 2,
-            contractNumber: 'HD-2025-002',
-            constructionName: 'Công trình Nhà B',
-            customerName: 'Nguyễn Văn D',
-            createdDate: '2025-02-21T14:20:00',
-            status: 'Approved',
-            finalAmount: 84800000,
-            items: [
-                { name: 'Thép I 150x75', quantity: 30, price: 2500000 }
-            ]
-        },
-        {
-            id: 3,
-            contractNumber: 'HD-2025-003',
-            constructionName: 'Công trình Nhà C',
-            customerName: 'Công ty ABC',
-            createdDate: '2025-02-22T09:15:00',
-            status: 'Draft',
-            finalAmount: 45000000,
-            items: [
-                { name: 'Thép hộp 40x40', quantity: 200, price: 225000 }
-            ]
-        },
-        {
-            id: 4,
-            contractNumber: 'HD-2025-004',
-            constructionName: 'Công trình Nhà D',
-            customerName: 'Công ty Nam Phát',
-            createdDate: '2025-02-23T11:30:00',
-            status: 'Rejected',
-            finalAmount: 75000000,
-            rejectReason: 'Thiếu thông tin thanh toán',
-            items: [
-                { name: 'Thép tròn D16', quantity: 150, price: 400000 }
-            ]
-        }
-    ];
-}
-
-function viewMyContract(contractId) {
-    const contract = myContracts.find(c => c.id === contractId);
-    if (!contract) return;
-
-    let itemsHtml = '';
-    if (contract.items && contract.items.length > 0) {
-        itemsHtml = contract.items.map(item => `
-            <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #e9ecef;">${item.name}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">${item.quantity}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(item.price)}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(item.quantity * item.price)}</td>
-            </tr>
-        `).join('');
+    // Kiểm tra xem công trình đã có hợp đồng chưa
+    const exists = await checkConstructionContract();
+    if (exists) {
+        alert('Công trình này đã có hợp đồng! Không thể tạo thêm.');
+        return;
     }
 
-    const modalBody = document.getElementById('viewContractBody');
-    modalBody.innerHTML = `
-        <div style="margin-bottom: 20px;">
-            <h3 style="margin-bottom: 15px; color: #2c3e50;">Thông tin hợp đồng</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px; background: #f8f9fa; width: 150px;"><strong>Số hợp đồng:</strong></td>
-                    <td style="padding: 8px;">${contract.contractNumber}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background: #f8f9fa;"><strong>Công trình:</strong></td>
-                    <td style="padding: 8px;">${contract.constructionName}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background: #f8f9fa;"><strong>Khách hàng:</strong></td>
-                    <td style="padding: 8px;">${contract.customerName}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background: #f8f9fa;"><strong>Ngày tạo:</strong></td>
-                    <td style="padding: 8px;">${formatDate(contract.createdDate, true)}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background: #f8f9fa;"><strong>Trạng thái:</strong></td>
-                    <td style="padding: 8px;">
-                        <span class="status-badge status-${contract.status.toLowerCase()}">${getStatusText(contract.status)}</span>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        
-        ${itemsHtml ? `
-            <div style="margin-bottom: 20px;">
-                <h3 style="margin-bottom: 15px; color: #2c3e50;">Chi tiết sản phẩm</h3>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #ffd700;">
-                            <th style="padding: 10px; text-align: left;">Sản phẩm</th>
-                            <th style="padding: 10px; text-align: right;">Số lượng</th>
-                            <th style="padding: 10px; text-align: right;">Đơn giá</th>
-                            <th style="padding: 10px; text-align: right;">Thành tiền</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${itemsHtml}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="3" style="padding: 10px; text-align: right;"><strong>Tổng cộng:</strong></td>
-                            <td style="padding: 10px; text-align: right;"><strong>${formatCurrency(contract.finalAmount)}</strong></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        ` : ''}
-        
-        ${contract.rejectReason ? `
-            <div style="margin-top: 20px; padding: 15px; background: #f8d7da; border-radius: 8px;">
-                <h4 style="color: #721c24; margin-bottom: 10px;">
-                    <i class="fas fa-exclamation-circle"></i>
-                    Lý do từ chối
-                </h4>
-                <p style="color: #721c24;">${contract.rejectReason}</p>
-            </div>
-        ` : ''}
+    const contractData = collectFormData();
+    contractData.contractStatus = 'Draft';
+
+    try {
+        const response = await callApi('/contracts', 'POST', contractData);
+        alert('Lưu nháp hợp đồng thành công!');
+        window.location.href = '/staff-contract';
+    } catch (error) {
+        alert('Lỗi: ' + error.message);
+    }
+}
+
+function submitFromView() {
+    if (currentViewContract) {
+        submitContract(currentViewContract.id);
+    }
+}
+
+// =============================================
+// DELETE CONTRACT
+// =============================================
+
+function showDeleteModal(id, name) {
+    deleteContractId = id;
+    deleteContractName = name;
+    document.getElementById('deleteContractName').textContent = name;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function closeDeleteModal() {
+    deleteContractId = null;
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+async function confirmDelete() {
+    if (!deleteContractId) return;
+
+    try {
+        await callApi(`/staff/contracts/${deleteContractId}`, 'DELETE');
+        alert('Xóa hợp đồng thành công!');
+        closeDeleteModal();
+        loadContracts();
+    } catch (error) {
+        alert('Lỗi khi xóa: ' + error.message);
+    }
+}
+
+// =============================================
+// PAGINATION FUNCTIONS
+// =============================================
+
+function updatePaginationInfo(start, end, total) {
+    document.getElementById('paginationInfo').textContent =
+        `Hiển thị ${start}-${end} của ${total} hợp đồng`;
+}
+
+function renderPaginationButtons() {
+    const totalPages = Math.ceil(filteredContracts.length / itemsPerPage);
+    const controls = document.getElementById('paginationControls');
+
+    let html = `
+        <button class="page-btn" onclick="changePage('prev')" ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left"></i>
+        </button>
     `;
 
-    document.getElementById('viewContractModal').style.display = 'block';
-}
-
-function editMyContract(contractId) {
-    const contract = myContracts.find(c => c.id === contractId);
-    if (!contract || contract.status !== 'Draft') {
-        showNotification('Không thể chỉnh sửa hợp đồng này!', 'error');
-        return;
-    }
-
-    // Load contract data into form
-    if (contract.customerName) {
-        // Find and select customer
-        const customers = getMockCustomers();
-        const customer = customers.find(c => c.fullName === contract.customerName);
-        if (customer) {
-            selectedCustomer = customer;
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            html += `
+                <button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+                    ${i}
+                </button>
+            `;
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+            html += `<button class="page-btn" disabled>...</button>`;
         }
     }
 
-    document.getElementById('constructionName').value = contract.constructionName;
+    html += `
+        <button class="page-btn" onclick="changePage('next')" ${currentPage === totalPages ? 'disabled' : ''}>
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
 
-    // Load cart items
-    if (contract.items) {
-        cart = contract.items.map(item => ({
-            productId: item.productId || 1,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            unit: item.unit || 'cây'
-        }));
-        renderCart();
-    }
-
-    showNotification('Đã tải dữ liệu hợp đồng để chỉnh sửa!', 'success');
-
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    controls.innerHTML = html;
 }
 
-function deleteMyContract(contractId) {
-    const contract = myContracts.find(c => c.id === contractId);
-    if (!contract) return;
-
-    if (contract.status !== 'Draft') {
-        showNotification('Không thể xóa hợp đồng đã gửi!', 'error');
-        return;
+function changePage(direction) {
+    const totalPages = Math.ceil(filteredContracts.length / itemsPerPage);
+    if (direction === 'prev' && currentPage > 1) {
+        currentPage--;
+    } else if (direction === 'next' && currentPage < totalPages) {
+        currentPage++;
     }
+    displayContracts();
+}
 
-    if (confirm(`Bạn có chắc muốn xóa hợp đồng ${contract.contractNumber}?`)) {
-        myContracts = myContracts.filter(c => c.id !== contractId);
-        displayMyContracts(myContracts);
-        showNotification('Đã xóa hợp đồng!', 'success');
-    }
+function goToPage(page) {
+    currentPage = page;
+    displayContracts();
 }
 
 // =============================================
-// UTILITY FUNCTIONS
+// HELPER FUNCTIONS
 // =============================================
 
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-}
-
-function formatDate(dateString, includeTime = false) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (includeTime) {
-        return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+function getStatusClass(status) {
+    switch(status) {
+        case 'Draft': return 'status-draft';
+        case 'Pending': return 'status-pending';
+        case 'Active': return 'status-active';
+        case 'Completed': return 'status-completed';
+        case 'Cancelled': return 'status-cancelled';
+        default: return 'status-draft';
     }
-    return date.toLocaleDateString('vi-VN');
 }
 
 function getStatusText(status) {
-    switch(status?.toLowerCase()) {
-        case 'pending': return 'Chờ duyệt';
-        case 'approved': return 'Đã duyệt';
-        case 'rejected': return 'Từ chối';
-        case 'draft': return 'Bản nháp';
-        default: return status || '';
+    switch(status) {
+        case 'Draft': return 'Bản nháp';
+        case 'Pending': return 'Chờ duyệt';
+        case 'Active': return 'Đang thực hiện';
+        case 'Completed': return 'Hoàn thành';
+        case 'Cancelled': return 'Đã hủy';
+        default: return status || 'Không xác định';
     }
 }
 
-function showNotification(message, type = 'info') {
-    // Tạo notification element
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 25px;
-        background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : '#cce5ff'};
-        color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : '#004085'};
-        border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        z-index: 9999;
-        animation: slideIn 0.3s ease;
-        font-weight: 500;
-    `;
-    notification.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-        ${message}
-    `;
-
-    document.body.appendChild(notification);
-
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 3000);
+function getPaymentClass(status) {
+    switch(status) {
+        case 'Unpaid': return 'payment-unpaid';
+        case 'Partial': return 'payment-partial';
+        case 'Paid': return 'payment-paid';
+        default: return 'payment-unpaid';
+    }
 }
 
-// Add animation styles
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+function getPaymentText(status) {
+    switch(status) {
+        case 'Unpaid': return 'Chưa TT';
+        case 'Partial': return 'TT một phần';
+        case 'Paid': return 'Đã TT';
+        default: return status || 'Chưa TT';
     }
-    
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+}
+
+function formatCurrency(amount) {
+    if (!amount) return '0₫';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// =============================================
+// IMPORT/EXPORT FUNCTIONS
+// =============================================
+
+function importContracts() {
+    alert('Chức năng nhập Excel đang phát triển');
+}
+
+function exportContracts() {
+    if (allContracts.length === 0) {
+        alert('Không có dữ liệu để xuất');
+        return;
     }
-`;
-document.head.appendChild(style);
+
+    // Tạo CSV content
+    let csv = 'Số HĐ,Tên công trình,Khách hàng,Ngày HĐ,Giá trị,Trạng thái HĐ,Thanh toán\n';
+
+    allContracts.forEach(c => {
+        csv += `${c.contractNumber || ''},${c.constructionName || ''},${c.customerName || ''},${c.contractDate || ''},${c.totalAmount || 0},${c.contractStatus || ''},${c.paymentStatus || ''}\n`;
+    });
+
+    // Download CSV
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'danh_sach_hop_dong.csv');
+    link.click();
+}
 
 // =============================================
 // MODAL FUNCTIONS
@@ -916,82 +740,27 @@ function closeViewModal() {
     document.getElementById('viewContractModal').style.display = 'none';
 }
 
-// =============================================
-// SEARCH FUNCTIONS
-// =============================================
+function closeEditModal() {
+    document.getElementById('editContractModal').style.display = 'none';
+}
 
-let customerSearchTimeout;
-document.getElementById('customerSearch')?.addEventListener('input', function() {
-    clearTimeout(customerSearchTimeout);
-    customerSearchTimeout = setTimeout(() => {
-        const searchTerm = this.value.toLowerCase();
-        document.querySelectorAll('.customer-item').forEach(item => {
-            const name = item.querySelector('.customer-name').textContent.toLowerCase();
-            if (name.includes(searchTerm)) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    }, 300);
-});
-
-let productSearchTimeout;
-document.getElementById('productSearch')?.addEventListener('input', function() {
-    clearTimeout(productSearchTimeout);
-    productSearchTimeout = setTimeout(() => {
-        const searchTerm = this.value.toLowerCase();
-        document.querySelectorAll('.product-card').forEach(card => {
-            const name = card.querySelector('.product-name').textContent.toLowerCase();
-            if (name.includes(searchTerm)) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }, 300);
-});
+function editFromView() {
+    closeViewModal();
+    if (currentViewContract) {
+        editContract(currentViewContract.id);
+    }
+}
 
 // =============================================
 // WINDOW CLICK HANDLER
 // =============================================
 
 window.onclick = function(event) {
-    const modal = document.getElementById('viewContractModal');
-    if (event.target === modal) {
-        closeViewModal();
-    }
+    const viewModal = document.getElementById('viewContractModal');
+    const editModal = document.getElementById('editContractModal');
+    const deleteModal = document.getElementById('deleteModal');
+
+    if (event.target === viewModal) closeViewModal();
+    if (event.target === editModal) closeEditModal();
+    if (event.target === deleteModal) closeDeleteModal();
 };
-
-function filterByRole(role) {
-    console.log('Filter by role:', role);
-    // Implement filter logic here if needed
-    showNotification(`Lọc theo vai trò: ${role}`, 'info');
-}
-
-function filterByStatus(status) {
-    console.log('Filter by status:', status);
-    // Implement filter logic here if needed
-    showNotification(`Lọc theo trạng thái: ${status}`, 'info');
-}
-
-// =============================================
-// EXPORT FUNCTIONS FOR HTML
-// =============================================
-
-// Make functions globally available
-window.selectCustomer = selectCustomer;
-window.addToCart = addToCart;
-window.updateQuantity = updateQuantity;
-window.updateQuantityInput = updateQuantityInput;
-window.removeFromCart = removeFromCart;
-window.clearCart = clearCart;
-window.applyPromotion = applyPromotion;
-window.saveDraft = saveDraft;
-window.submitContract = submitContract;
-window.viewMyContract = viewMyContract;
-window.editMyContract = editMyContract;
-window.deleteMyContract = deleteMyContract;
-window.closeViewModal = closeViewModal;
-window.filterByRole = filterByRole;
-window.filterByStatus = filterByStatus;

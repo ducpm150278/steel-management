@@ -1,6 +1,7 @@
 package com.steelmanagement.steel_management.dto;
 
 import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -8,18 +9,31 @@ import java.util.List;
 public class ContractDTO {
     private Integer id;
     private String contractNumber;
+    private Integer constructionId;
     private String constructionName;
+    private Integer customerId;
     private String customerName;
     private String customerPhone;
-    private String staffName;
-    private String staffRole;
-    private LocalDateTime createdDate;
-    private String status;
+    private LocalDate contractDate;
+    private LocalDate deliveryDate;
+    private String contractStatus;
+    private String paymentStatus;
+    private String paymentMethod;
     private Double totalAmount;
-    private String promotionCode;
-    private Double promotionDiscount;
+    private Double vatAmount;
     private Double finalAmount;
-    private List<ContractItemDTO> items;  // Đổi tên cho rõ ràng
+    private Double depositAmount;
+    private String paymentTerms;
+    private String deliveryTerms;
+    private String technicalRequirements;
+    private Integer promotionId;
+    private String promotionCode;
+    private Double promotionDiscountAmount;
     private String notes;
-    private String rejectReason;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private Integer createdBy;
+    private String createdByName;
+    private Integer approvedBy;
+    private List<ContractItemDTO> items;
 }

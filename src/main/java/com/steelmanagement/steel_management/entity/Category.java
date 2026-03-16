@@ -1,5 +1,6 @@
 package com.steelmanagement.steel_management.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -13,21 +14,14 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
-    @Column(name = "code", unique = true, nullable = false)
+    @Column(name = "code", unique = true)
     private String code;
 
     @Column(name = "parent_id")
     private Integer parentId;
-
-    @ManyToOne
-    @JoinColumn(name = "parent_id", insertable = false, updatable = false)
-    private Category parent;
-
-    @OneToMany(mappedBy = "parent")
-    private List<Category> subCategories;
 
     @Column(name = "sort_order")
     private Integer sortOrder;
@@ -38,4 +32,11 @@ public class Category {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "category")
+    private List<Product> products;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "parentId")
+    private List<Category> children;
 }

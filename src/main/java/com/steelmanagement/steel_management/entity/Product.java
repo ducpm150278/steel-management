@@ -2,7 +2,6 @@ package com.steelmanagement.steel_management.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -55,4 +54,8 @@ public class Product {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public String getCode() {
+        return this.productCode;
+    }
 }

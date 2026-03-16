@@ -2,7 +2,6 @@ package com.steelmanagement.steel_management.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
@@ -28,6 +27,5 @@ public class ProductDTO {
     @JsonProperty("minStockLevel")
     private Double minStockLevel;
 
-    // Thêm trường price từ PriceLists
-    private Double price;
+    private Double price;  // 🟢 Giá từ PriceLists
 }

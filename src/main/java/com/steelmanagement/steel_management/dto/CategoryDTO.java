@@ -9,9 +9,15 @@ public class CategoryDTO {
     private String name;
     private String code;
     private Integer parentId;
-    private String parentName;
+    private String parentName;      // Tên danh mục cha (cho hiển thị)
     private Integer sortOrder;
     private Boolean isActive;
     private LocalDateTime createdAt;
-    private Integer productCount;
+
+    // Thống kê
+    private long productCount;      // Số lượng sản phẩm trong danh mục
+    private int childCount;          // Số lượng danh mục con
+
+    // Đường dẫn đầy đủ (ví dụ: Thép > Thép H > Thép H 100)
+    private String fullPath;
 }

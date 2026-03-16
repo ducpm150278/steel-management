@@ -412,32 +412,32 @@
     <div class="menu-section">
       <div class="menu-title">QUẢN LÝ</div>
 
-      <a href="/api/staff-customers" class="menu-item">
+      <a href="/api/page/staff/customers" class="menu-item">
         <i class="fas fa-user-tie"></i>
         Quản lý khách hàng
       </a>
 
-      <a href="/api/staff-constructions" class="menu-item active">
+      <a href="/api/page/staff/constructions" class="menu-item active">
         <i class="fas fa-building"></i>
         Quản lý Công trình
       </a>
 
-      <a href="/api/staff-contract" class="menu-item">
+      <a href="/api/page/staff/contract" class="menu-item">
         <i class="fas fa-file-contract"></i>
         Quản lý hợp đồng
       </a>
 
-      <a href="/api/staff-products" class="menu-item">
+      <a href="/api/page/staff/products" class="menu-item">
         <i class="fas fa-cubes"></i>
         Quản lý sản phẩm
       </a>
 
-      <a href="/api/staff-categories" class="menu-item">
+      <a href="/api/page/staff/categories" class="menu-item">
         <i class="fas fa-tags"></i>
         Quản lý danh mục
       </a>
 
-      <a href="/api/staff-inventory" class="menu-item">
+      <a href="/api/page/staff/inventory" class="menu-item">
         <i class="fas fa-warehouse"></i>
         Quản lý kho
       </a>
@@ -480,10 +480,10 @@
         </div>
 
         <div style="display: flex; gap: 10px;">
-          <button class="btn-add" onclick="showAddConstructionModal()">
-            <i class="fas fa-plus"></i>
-            Thêm công trình
-          </button>
+<!--          <button class="btn-add" onclick="showAddConstructionModal()">-->
+<!--            <i class="fas fa-plus"></i>-->
+<!--            Thêm công trình-->
+<!--          </button>-->
         </div>
       </div>
 
@@ -594,14 +594,38 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label>Mã công trình <span style="color: #dc3545;">*</span></label>
-          <input type="text" id="constructionCode" placeholder="VD: CT001" required>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mã công trình <span style="color: #dc3545;">*</span></label>
+            <input type="text" id="constructionCode" placeholder="VD: CT001" required>
+          </div>
+
+          <div class="form-group">
+            <label>Ngày tạo</label>
+            <input type="text" id="createdAt" readonly style="background: #f8f9fa;">
+          </div>
         </div>
 
         <div class="form-group">
           <label>Tên công trình <span style="color: #dc3545;">*</span></label>
           <input type="text" id="constructionName" placeholder="VD: Công trình Nhà A" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Trạng thái</label>
+            <select id="constructionStatus" class="filter-select">
+              <option value="Draft">Bản nháp</option>
+              <option value="Submitted">Chờ duyệt</option>
+              <option value="Accepted">Đã duyệt</option>
+              <option value="Rejected">Từ chối</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Ngày gửi duyệt</label>
+            <input type="text" id="submittedAt" readonly style="background: #f8f9fa;">
+          </div>
         </div>
 
         <div class="form-group">
@@ -624,7 +648,6 @@
     </div>
   </div>
 </div>
-
 <!-- View Construction Modal -->
 <div class="modal" id="viewConstructionModal" style="display: none;">
   <div class="modal-content modal-lg">

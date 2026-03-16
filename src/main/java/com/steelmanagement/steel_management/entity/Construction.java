@@ -1,8 +1,10 @@
 package com.steelmanagement.steel_management.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Constructions")
@@ -37,7 +39,6 @@ public class Construction {
     @Column(name = "notes")
     private String notes;
 
-    // Promotion fields - khớp với tên cột trong DB
     @Column(name = "PromotionID")
     private Integer promotionId;
 
@@ -55,4 +56,12 @@ public class Construction {
 
     @Column(name = "created_by")
     private Integer createdBy;
+
+    @ManyToOne
+    @JoinColumn(name = "created_by", insertable = false, updatable = false)
+    private User creator;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "construction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ConstructionDetail> constructionDetails;
 }

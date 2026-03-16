@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 
 @Repository
@@ -13,8 +12,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     List<Product> findByCategoryId(Integer categoryId);
 
-    // 🟢 Method này trả về int - dùng để đếm sản phẩm trong category
-    int countByCategoryId(Integer categoryId);
+    long countByCategoryId(Integer categoryId);
 
     @Query("SELECT p FROM Product p WHERE " +
             "LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -27,4 +25,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findLowStockProducts();
 
     List<Product> findByIsActive(Boolean isActive);
+
+    // 🟢 QUAN TRỌNG: Method này đang được dùng trong CustomerProductService
+    List<Product> findByIsActiveTrueOrderByNameAsc();
 }

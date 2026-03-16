@@ -2,6 +2,7 @@ package com.steelmanagement.steel_management.controller;
 
 import com.steelmanagement.steel_management.dto.ApiResponse;
 import com.steelmanagement.steel_management.dto.ConstructionDTO;
+import com.steelmanagement.steel_management.dto.ConstructionDetailDTO;
 import com.steelmanagement.steel_management.entity.Construction;
 import com.steelmanagement.steel_management.service.ConstructionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +26,10 @@ public class StaffConstructionController {
     }
 
     @GetMapping("/detail/{id}")
-    public ResponseEntity<ApiResponse<ConstructionDTO>> getConstructionById(@PathVariable Integer id) {
-        ConstructionDTO construction = constructionService.getConstructionById(id);
-        if (construction != null) {
-            return ResponseEntity.ok(ApiResponse.success(construction));
+    public ResponseEntity<ApiResponse<ConstructionDetailDTO>> getConstructionDetail(@PathVariable Integer id) {
+        ConstructionDetailDTO detail = constructionService.getConstructionDetailById(id);
+        if (detail != null) {
+            return ResponseEntity.ok(ApiResponse.success(detail));
         }
         return ResponseEntity.notFound().build();
     }
@@ -53,7 +54,7 @@ public class StaffConstructionController {
     public ResponseEntity<ApiResponse<Construction>> submitConstruction(@PathVariable Integer id) {
         Construction updated = constructionService.submitConstruction(id);
         if (updated != null) {
-            return ResponseEntity.ok(ApiResponse.success("Gửi duyệt thành công", updated));
+            return ResponseEntity.ok(ApiResponse.success("Gửi duyệt công trình thành công", updated));
         }
         return ResponseEntity.notFound().build();
     }

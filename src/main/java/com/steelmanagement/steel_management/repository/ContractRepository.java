@@ -16,9 +16,12 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
 
     List<Contract> findByCustomerId(Integer customerId);
 
+    List<Contract> findByConstructionId(Integer constructionId);
+
     @Query("SELECT c FROM Contract c WHERE c.contractStatus = :status AND c.createdBy = :staffId")
     List<Contract> findByStatusAndStaff(@Param("status") String status, @Param("staffId") Integer staffId);
 
     @Query("SELECT c FROM Contract c ORDER BY c.createdAt DESC")
     List<Contract> findAllOrderByCreatedAtDesc();
+
 }

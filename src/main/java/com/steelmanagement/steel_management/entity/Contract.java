@@ -1,5 +1,7 @@
 package com.steelmanagement.steel_management.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.steelmanagement.steel_management.dto.ContractItemDTO;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
@@ -88,7 +90,6 @@ public class Contract {
     @Column(name = "notes")
     private String notes;
 
-    // Promotion fields
     @Column(name = "PromotionID")
     private Integer promotionId;
 
@@ -108,19 +109,19 @@ public class Contract {
     @Column(name = "approved_by")
     private Integer approvedBy;
 
-    @ManyToOne
-    @JoinColumn(name = "approved_by", insertable = false, updatable = false)
-    private User approver;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "submitted_at")
-    private LocalDateTime submittedAt;
+//    @Column(name = "submitted_at")
+//    private LocalDateTime submittedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ContractDetail> contractDetails;
+
+    @Transient
+    private List<ContractItemDTO> items;
 }

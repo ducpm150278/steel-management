@@ -21,19 +21,19 @@ public class PriceList {
     private Product product;
 
     @Column(name = "price_type")
-    private String priceType;
+    private String priceType; // 'retail', 'wholesale', 'special'
 
     @Column(name = "customer_type")
-    private String customerType;
+    private String customerType; // 'retailer', 'contractor', 'wholesaler'
 
     @Column(name = "customer_id")
-    private Integer customerId;
+    private Integer customerId; // Giá đặc biệt cho khách hàng cụ thể
 
     @Column(name = "unit_price")
-    private Double unitPrice;
+    private Double unitPrice; // Giá gốc
 
     @Column(name = "sale_price")
-    private Double salePrice;
+    private Double salePrice; // Giá bán thực tế
 
     @Column(name = "currency")
     private String currency;

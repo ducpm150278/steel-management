@@ -22,6 +22,12 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success(categories));
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getActiveCategories() {
+        List<CategoryDTO> categories = categoryService.getActiveCategories();
+        return ResponseEntity.ok(ApiResponse.success(categories));
+    }
+
     @GetMapping("/root")
     public ResponseEntity<ApiResponse<List<CategoryDTO>>> getRootCategories() {
         List<CategoryDTO> categories = categoryService.getRootCategories();
@@ -43,7 +49,6 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success(categories));
     }
 
-    // 🟢 Method search - dòng 48 trong file của bạn
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<CategoryDTO>>> searchCategories(@RequestParam String keyword) {
         List<CategoryDTO> categories = categoryService.searchCategories(keyword);
@@ -70,5 +75,11 @@ public class CategoryController {
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Integer id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa danh mục thành công", null));
+    }
+
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<ApiResponse<Void>> toggleCategoryActive(@PathVariable Integer id) {
+        categoryService.toggleActive(id);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái thành công", null));
     }
 }
